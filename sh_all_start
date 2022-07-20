@@ -1,0 +1,25 @@
+#!/bin/bash
+
+set -x
+
+# 1.   Generate the expansions
+        ./sh_files_c
+
+# 2.   Get the nuclear data
+        ./sh_nuc_seq
+
+# 3.   Get T-F orbitals as initial estimates
+        ./sh_est_grd
+        ./sh_est_exc
+
+# 4.   Perform scf calculations 
+        ./sh_dhf_grd
+        ./sh_dhf_exc
+
+# 5.   Perform rci loop
+	./sh_rci
+
+# 6.   Perform a transition calculation
+        ./sh_tr
+        
+
