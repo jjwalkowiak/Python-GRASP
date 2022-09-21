@@ -14,6 +14,7 @@ import subprocess
 import shutil
 import glob
 
+
 def setENV(pathGRASP='/grasp/grasp-2018-12-03', pathOpenMPI='/opt.openmpi', pathMPI_TMP='/temp/MPI'):
     """
     Set environment variables necessary to run GRASP code
@@ -28,6 +29,7 @@ def setENV(pathGRASP='/grasp/grasp-2018-12-03', pathOpenMPI='/opt.openmpi', path
     os.environ["MPI_TMP"] = os.environ["HOME"] + pathMPI_TMP
 
     return 0
+
 
 def rcsfgenerate(configurations, activeSet, lowJnumber, highJnumber, excitations, output, encoding="utf-8", ordering='*', core='0', printInput=False):
     """
@@ -50,19 +52,19 @@ def rcsfgenerate(configurations, activeSet, lowJnumber, highJnumber, excitations
         6: Rn ([Xe] + 4f(14)5d(10)6s(2)6p(6) = 86 electrons)
     :return: 0
     """
-    #Combine input
+    # Combine input
     inputC = ordering + '\n' + core + '\n'
     for conf in configurations:
-        inputC += conf +'\n'
+        inputC += conf + '\n'
     inputC += '\n'
-    inputC +=','.join(activeSet)
+    inputC += ','.join(activeSet)
     inputC += '\n' + str(lowJnumber) + ',' + str(highJnumber) + '\n' + str(excitations) + '\nn\n'
 
     if printInput:
         print("Input to rcsfgenerate")
         print(inputC)
 
-    #Run rcsfgenerate
+    # Run rcsfgenerate
     subprocess.run(['rcsfgenerate'],
                    input=inputC,
                    encoding=encoding)
@@ -70,6 +72,7 @@ def rcsfgenerate(configurations, activeSet, lowJnumber, highJnumber, excitations
     # copy output to destination file
     shutil.copyfile('rcsf.out', output)
     return 0
+
 
 def rcsfsplit(input, fileLabels, orbitalSets, encoding="utf-8", printInput=False):
     """
@@ -83,12 +86,12 @@ def rcsfsplit(input, fileLabels, orbitalSets, encoding="utf-8", printInput=False
     :return: 0
     """
 
-    #Check input consistency
+    # Check input consistency
     if len(orbitalSets) == len(fileLabels):
         # Combine input
-        inputC = input + '\n' + str(len(orbitalSets)) +'\n'
+        inputC = input + '\n' + str(len(orbitalSets)) + '\n'
         for i, orbitalSet in enumerate(orbitalSets):
-            inputC +=','.join(orbitalSet)
+            inputC += ','.join(orbitalSet)
             inputC += '\n' + fileLabels[i] + '\n'
 
         if printInput:
@@ -100,7 +103,8 @@ def rcsfsplit(input, fileLabels, orbitalSets, encoding="utf-8", printInput=False
                        input=inputC,
                        encoding=encoding)
         return 0
-    else: return 1 #I should give here some warning, that input is wrong
+    else: return 1  # I should give here some warning, that input is wrong
+
 
 def rnucleus(charge, mass_number=0, mass=0, nuc_spin=1, nuc_dipol_moment=1, nuc_quadrupole_moment=1, encoding="utf-8"):
     """
@@ -123,6 +127,7 @@ def rnucleus(charge, mass_number=0, mass=0, nuc_spin=1, nuc_dipol_moment=1, nuc_
                    encoding=encoding)
     return 0
 
+
 def rangular(input="y\n", encoding="utf-8"):
     """
     Run rangular - calculate abgular part of the wave function
@@ -135,18 +140,65 @@ def rangular(input="y\n", encoding="utf-8"):
                    encoding=encoding)
     return 0
 
-def rwfnestimate(input, encoding="utf-8"):
+
+def rwfnestimate(init_guess=2, subshells='*', encoding="utf-8"):
+    """
+
+    :param init_guess: Set initial estimation of the wave function
+        1 -- GRASP92 File (no implemented yet)
+        2 -- Thomas-Fermi
+        3 -- Screened Hydrogenic
+    :param subshells: list of relativistic subshells
+    :param encoding: encoding for subprocesss, default utf-8
+    :return: 0
+    """
+
+    inputC = 'y\n' + str(init_guess) + '\n'
+    if init_guess == 1:
+        print('reading from GRASP files not supported yet')
+    inputC += subshells + '\n'
+
     subprocess.run(['rwfnestimate'],
-                   input=input,
+                   input=inputC,
                    encoding=encoding)
     return 0
 
-def rmcdhf(input, output_log, encoding="utf-8"):
-    subprocess.run(['rmcdhf'],
-                   input=input,
-                   stdout=output_log,
-                   encoding=encoding)
+
+def rmcdhf(ASF_blocks, weights=None, output_log=None, orbitals='*', spectroscopic_orbitals='*',
+           itr_limit=100, encoding="utf-8", printInput=False):
+
+    if not isinstance(ASF_blocks, list): ASF_blocks = [ASF_blocks]
+    if weights is None:
+        weights = [5] * len(ASF_blocks)
+
+    inputC = 'y\n'
+    for i, ASF in enumerate(ASF_blocks):
+        if not isinstance(ASF, str):    # Safeguard to change input into string
+            if not isinstance(ASF, list): ASF = [ASF]
+            ASF = " ".join([str(ASF_int) for ASF_int in ASF])
+        inputC += str(ASF) + '\n'
+        try:    # Check if ASF is just one number, if not add input with weight
+            int(ASF)
+        except:
+            inputC += str(weights[i]) + '\n'
+
+    inputC += orbitals + '\n' + spectroscopic_orbitals + '\n' + str(itr_limit) + '\n'
+
+    if printInput: print(inputC)
+
+    if output_log is not None:
+        with open(output_log, 'w') as output:
+            subprocess.run(['rmcdhf'],
+                           input=inputC,
+                           stdout=output,
+                           encoding=encoding)
+    else:
+        subprocess.run(['rmcdhf'],
+                       input=inputC,
+                       encoding=encoding)
+
     return 0
+
 
 def rsave(output_file):
     """
@@ -157,14 +209,28 @@ def rsave(output_file):
     subprocess.run(['rsave', output_file])
     return 0
 
+
+def clean_files():
+    """
+    Remove temp files before next calculation loop: mcp*, rwfn*, rcsf*
+    :return: 0
+    """
+    file_names = ['mcp', 'rwfn', 'rcsf']
+    for name in file_names:
+        name = name + '*'
+        for file in glob.glob(name):
+            os.remove(file)
+    return 0
+
+
 def clean_all_files(file_names=None):
-    if file_names is None: file_names=[]
+    if file_names is None: file_names = []
     """
     Look for files generated by GRASP and delete them
     :param file_names: list of file names which will be looked for and deleted (like shell rm name*)
     :return: 0
     """
-    if not isinstance(file_names, list): var_1 = [file_names]
+    if not isinstance(file_names, list): file_names = [file_names]
     file_names += ['trans', 'hfs', 'energy', 'rcsf']
     for name in file_names:
         name = name + '*'
@@ -177,6 +243,6 @@ def clean_all_files(file_names=None):
     for file in ["output", "excitationdata", "rcsfexcitation.log", "clist.new"]:
         if os.path.isfile(file): os.remove(file)
 
-    for dir in glob.glob('Z*'):
-        if os.path.isdir(dir):  shutil.rmtree(dir)
+    for directory in glob.glob('Z*'):
+        if os.path.isdir(directory):  shutil.rmtree(directory)
     return 0
