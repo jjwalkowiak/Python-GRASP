@@ -58,6 +58,7 @@ def rcsfgenerate(configurations, activeSet, lowJnumber, highJnumber, excitations
     inputC += '\n' + str(lowJnumber) + ',' + str(highJnumber) + '\n' + str(excitations) + '\nn\n'
 
     if printInput:
+        print("Input to rcsfgenerate")
         print(inputC)
 
     #Run rcsfgenerate
@@ -85,6 +86,7 @@ def rcsfsplit(input, fileLabels, orbitalSets, encoding="utf-8", printInput=False
             inputC += '\n' + fileLabels[i] + '\n'
 
         if printInput:
+            print("Input to rcsfsplit")
             print(inputC)
 
         # Run rcsfsplit
@@ -93,6 +95,27 @@ def rcsfsplit(input, fileLabels, orbitalSets, encoding="utf-8", printInput=False
                        encoding=encoding)
         return 0
     else: return 1 #I should give here some warning, that input is wrong
+
+def rnucleus(charge, mass_number=0, mass=0, nuc_spin=1, nuc_dipol_moment=1, nuc_quadrupole_moment=1, encoding="utf-8"):
+    """
+    Run rnucleus subprocess
+    :param charge: charge of the nucleus
+    :param mass_number: mass number (0 if the nucleus is to be modelled as a point source - default)
+    :param mass: mass of the neutral atom (in amu) (0 if the nucleus is to be static - default)
+    :param nuc_spin: nuclear spin quantum number (I) (in units of h / 2 pi) (1 to neglect - default)
+    :param nuc_dipol_moment: nuclear dipole moment (in nuclear magnetons) (1 to neglect - default)
+    :param nuc_quadrupole_moment: nuclear quadrupole moment (in barns) (1 to neglect - default)
+    :param encoding: encoding for subprocesss, default utf-8
+    :return: 0
+    """
+    inputC = str(charge) + '\n' + str(mass_number) + '\n'
+    if mass_number > 0: inputC += 'n\n'
+    inputC += str(mass) + '\n' + str(nuc_spin) + '\n' + str(nuc_dipol_moment) + '\n' + str(nuc_quadrupole_moment) + '\n'
+
+    subprocess.run(['rnucleus'],
+                   input=inputC,
+                   encoding=encoding)
+    return 0
 
 def rangular(input, encoding="utf-8"):
     subprocess.run(['rangular'],
