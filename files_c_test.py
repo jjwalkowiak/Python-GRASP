@@ -1,6 +1,4 @@
 import os
-import subprocess
-import shutil
 import callgrasp as GRASP
 
 GRASP.setENV()
@@ -9,7 +7,7 @@ GRASP.setENV()
 os.chdir('test')
 
 # remove all generated files
-subprocess.run(['sh', './clean'])
+GRASP.clean_all_files(['grd', 'exc'])
 
 #  1.  Generate grasp2K expansions
 #      1.1 for ground state
@@ -24,19 +22,19 @@ GRASP.rcsfgenerate(con, act, lJ, hJ, excitations, 'grd1.c')
 
 # expansion CSF
 con = ['1s(2,*)']
-act = ['5s','5p','5d','5f','5g']
+act = ['5s', '5p', '5d', '5f', '5g']
 lJ = 0
 hJ = 0
 excitations = 2
 GRASP.rcsfgenerate(con, act, lJ, hJ, excitations, 'grd.c')
 
 # split grd by layers
-flabels = ['2','3','4','5']
-orbitals = [['2s','2p'],
-            ['3s','3p','3d'],
-            ['4s','4p','4d','4f'],
-            ['5s','5p','5d','5f','5g']]
-GRASP.rcsfsplit('grd',flabels,orbitals)
+flabels = ['2', '3', '4', '5']
+orbitals = [['2s', '2p'],
+            ['3s', '3p', '3d'],
+            ['4s', '4p', '4d', '4f'],
+            ['5s', '5p', '5d', '5f', '5g']]
+GRASP.rcsfsplit('grd', flabels, orbitals)
 ##########################################
 
 #  2.  Generate grasp2K expansions
@@ -52,7 +50,7 @@ GRASP.rcsfgenerate(con, act, lJ, hJ, excitations, 'exc1.c')
 
 # expansion CSF
 con = ['1s(1,*)2p(1,*)']
-act = ['8s','8p','8d','8f','8g']
+act = ['8s', '8p', '8d', '8f', '8g']
 lJ = 0
 hJ = 2
 excitations = 2

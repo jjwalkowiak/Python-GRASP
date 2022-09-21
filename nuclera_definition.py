@@ -168,5 +168,7 @@ def Generate_Nuclear_files(Z_list):
 if __name__ == "__main__":
     GRASP.setENV()
     Z_list = [2,10,74]
+    os.chdir('test')
     Generate_Nuclear_files(Z_list)
+    os.chdir('..')
 
