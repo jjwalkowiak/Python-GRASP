@@ -40,7 +40,7 @@ def rcsfgenerate(configurations, activeSet, lowJnumber, highJnumber, excitations
     :param highJnumber: Resulting higher 2*J number
     :param excitations: Number of excitations (if negative number e.g. -2, correlation orbitals will always be doubly occupied)
     :param output: name of the output file
-    :param encoding: encoding for subprocesss, default utf-8
+    :param encoding: encoding for subprocess, default utf-8
     :param ordering: Default, reverse, symmetry or user specified ordering? (*/r/s/u)
     :param core: Select core (default 0)
         0: No core
@@ -80,8 +80,8 @@ def rcsfsplit(input, fileLabels, orbitalSets, encoding="utf-8", printInput=False
     :param input: name of the file to split
     :param fileLabels: labels which will be added to resulting files (output files -> input+fileLabel)
     :param orbitalSets: list of list of orbitals which will be used to split the input
-    !WARNING! - fileLabels and orbitalSets should give the mase length
-    :param encoding: encoding for subprocesss, default utf-8
+    !WARNING! - fileLabels and orbitalSets should give the same length
+    :param encoding: encoding for subprocess, default utf-8
     :param printInput: If True, input to subprocess will be printed (False by default)
     :return: 0
     """
@@ -115,7 +115,7 @@ def rnucleus(charge, mass_number=0, mass=0, nuc_spin=1, nuc_dipol_moment=1, nuc_
     :param nuc_spin: nuclear spin quantum number (I) (in units of h / 2 pi) (1 to neglect - default)
     :param nuc_dipol_moment: nuclear dipole moment (in nuclear magnetons) (1 to neglect - default)
     :param nuc_quadrupole_moment: nuclear quadrupole moment (in barns) (1 to neglect - default)
-    :param encoding: encoding for subprocesss, default utf-8
+    :param encoding: encoding for subprocess, default utf-8
     :return: 0
     """
     inputC = str(charge) + '\n' + str(mass_number) + '\n'
@@ -128,35 +128,44 @@ def rnucleus(charge, mass_number=0, mass=0, nuc_spin=1, nuc_dipol_moment=1, nuc_
     return 0
 
 
-def rangular(input="y\n", encoding="utf-8"):
+def rangular(input="y\n", mpi_cores=1, encoding="utf-8"):
     """
-    Run rangular - calculate abgular part of the wave function
+    Run rangular - calculate angular part of the wave function, providing mpi_cores activates MPI
     :param input: input to subprocess, default setting uses default GRASP values
-    :param encoding: encoding for subprocesss, default utf-8
+    :param mpi_cores: number of cores to use in calculations (default = 1, which avoids MPI)
+    :param encoding: encoding for subprocess, default utf-8
     :return: 0
     """
-    subprocess.run(['rangular'],
+    if mpi_cores == 1:
+        runName = ['rangular']
+    else:
+        runName = ['mpirun', '-np', str(mpi_cores), 'rangular_mpi']
+
+    subprocess.run(runName,
                    input=input,
                    encoding=encoding)
+
     return 0
 
 
-def rwfnestimate(init_guess=2, subshells='*', encoding="utf-8"):
+def rwfnestimate(init_guess=2, inputFile=None, encoding="utf-8"):
     """
-
+    Run rwfnestimate by optionally reading all subshells from given file and estimating others with given method
     :param init_guess: Set initial estimation of the wave function
-        1 -- GRASP92 File (no implemented yet)
+        1 -- GRASP92 File (don't use it, will be called automatically if inputFile is given)
         2 -- Thomas-Fermi
         3 -- Screened Hydrogenic
-    :param subshells: list of relativistic subshells
-    :param encoding: encoding for subprocesss, default utf-8
+    :param inputFile: name of the input file from which wave functions can be read
+    :param encoding: encoding for subprocess, default utf-8
     :return: 0
     """
 
-    inputC = 'y\n' + str(init_guess) + '\n'
-    if init_guess == 1:
-        print('reading from GRASP files not supported yet')
-    inputC += subshells + '\n'
+    inputC = 'y\n'
+
+    if inputFile is not None:
+        inputC += '1\n' + inputFile + '\n*\n'
+
+    inputC += str(init_guess) + '\n*\n'
 
     subprocess.run(['rwfnestimate'],
                    input=inputC,

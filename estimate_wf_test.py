@@ -10,6 +10,7 @@ os.chdir('test')
 
 # Calculation for ground state
 ##############################################
+
 # create input file and generate angular data
 # copy csf list as input file
 shutil.copyfile('./grd1.c', 'rcsf.inp')
@@ -26,13 +27,13 @@ for z in (2, 10, 74):
         shutil.copy(ang_file, '.')
 
     # Get initial estimates of wave functions
-    GRASP.rwfnestimate(init_guess=2, subshells='*')
+    GRASP.rwfnestimate(init_guess=2)
 
     # Perform self-consistent field calculations (save log)
     GRASP.rmcdhf(1, output_log='outgrd_rmcdhf')
 
     GRASP.rsave('grd1')
-    print('done')
+    print('Done')
 
     # back to test directory
     os.chdir('..')
@@ -55,7 +56,7 @@ for z in (2, 10, 74):
         shutil.copy(ang_file, '.')
 
     # Get initial estimates of wave functions
-    GRASP.rwfnestimate(init_guess=2, subshells='*')
+    GRASP.rwfnestimate(init_guess=2)
 
     # Perform self-consistent field calculations (save log)
     ASF = [[1], [1, 2]]
