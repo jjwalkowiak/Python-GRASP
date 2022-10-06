@@ -281,6 +281,66 @@ def rci(inputFile, ASF_blocks, photon_frequency_scale_factor=0, H_transverse='y'
 
     return 0
 
+
+def rbiotransform(set1, set2, use_rci='y', output_log=None, encoding="utf-8"):
+    """
+    Run rbiotransform - transforms the initial and final wave
+    functions so that standard tensor algebra can be
+    used in evaluation of the transition parameters
+    :param set1: Name of the Initial state
+    :param set2: Name of the Final state
+    :param use_rci: Input from a CI calculation? - y/n
+    :param output_log: name file for output log
+    :param encoding: encoding for subprocess, default utf-8
+    :return: 0
+    """
+    inputC = 'y\n' + use_rci + '\n' + set1 + '\n' + set2 + '\n' + 'y\n'
+
+    if output_log is not None:
+        with open(output_log, 'w') as output:
+            subprocess.run(['rbiotransform'],
+                           input=inputC,
+                           stdout=output,
+                           encoding=encoding,
+                           check=True)
+    else:
+        subprocess.run(['rbiotransform'],
+                       input=inputC,
+                       encoding=encoding,
+                       check=True)
+    return 0
+
+
+def rtransition(set1, set2, transitions='E1', use_rci='y', output_log=None, encoding="utf-8"):
+    """
+    Run rtransition - computes transition parameters from transformed wave functions
+    :param set1: Name of the Initial state
+    :param set2: Name of the Final state
+    :param transitions: list of transition specifications, e.g. E1,M2
+    :param use_rci: Input from a CI calculation? - y/n
+    :param output_log: name file for output log
+    :param encoding: encoding for subprocess, default utf-8
+    :return: 0
+    """
+    if not isinstance(transitions, list):
+        transitions = [transitions]
+    transitions = ' '.join(transitions)
+    inputC = 'y\n' + use_rci + '\n' + set1 + '\n' + set2 + '\n' + transitions + '\n'
+
+    if output_log is not None:
+        with open(output_log, 'w') as output:
+            subprocess.run(['rtransition'],
+                           input=inputC,
+                           stdout=output,
+                           encoding=encoding,
+                           check=True)
+    else:
+        subprocess.run(['rtransition'],
+                       input=inputC,
+                       encoding=encoding,
+                       check=True)
+    return 0
+
 def clean_files():
     """
     Remove temp files before next calculation loop: mcp*, rwfn*, rcsf*
