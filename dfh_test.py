@@ -37,6 +37,7 @@ def dfh_grd(elements_Zlist, number_of_CPUs):
             print('Done')
 
             os.chdir('..')
+    return 0
 
 
 def dfh_exc(elements_Zlist, number_of_CPUs):
@@ -76,6 +77,25 @@ def dfh_exc(elements_Zlist, number_of_CPUs):
 
             # back to test directory
             os.chdir('..')
+    return 0
+
+
+def rci_run(elements_Zlist, number_of_CPUs):
+    for z in elements_Zlist:
+        os.chdir('Z' + str(z))
+
+        ASF = [[1], [1, 2]]
+
+        GRASP.rci('grd5', 1, '1.d-6', H_normal_mass_shift='n', H_specific_mass_shift='n', selfenergy_limit=1,
+            output_log='outgrd_rci', mpi_cores=number_of_CPUs)
+
+        GRASP.rci('exc5', ASF, '1.d-6', H_normal_mass_shift='n', H_specific_mass_shift='n', selfenergy_limit=1,
+                  output_log='outgrd_rci', mpi_cores=number_of_CPUs)
+
+        # back to test directory
+        os.chdir('..')
+    return 0
+
 
 
 if __name__ == "__main__":
@@ -89,7 +109,10 @@ if __name__ == "__main__":
 
     # dfh_grd(z_list, cores)
 
-    dfh_exc(z_list, cores)
+    # dfh_exc(z_list, cores)
+
+    cores = 6
+    rci_run(z_list, cores)
 
     # back to mian directory
     os.chdir('..')

@@ -38,7 +38,8 @@ def rcsfgenerate(configurations, activeSet, lowJnumber, highJnumber, excitations
     :param activeSet: a limit of active set given as a list of nl combination for every shell included
     :param lowJnumber: Resulting lower 2*J number
     :param highJnumber: Resulting higher 2*J number
-    :param excitations: Number of excitations (if negative number e.g. -2, correlation orbitals will always be doubly occupied)
+    :param excitations: Number of excitations
+                        (if negative number e.g. -2, correlation orbitals will always be doubly occupied)
     :param output: name of the output file
     :param encoding: encoding for subprocess, default utf-8
     :param ordering: Default, reverse, symmetry or user specified ordering? (*/r/s/u)
@@ -74,10 +75,10 @@ def rcsfgenerate(configurations, activeSet, lowJnumber, highJnumber, excitations
     return 0
 
 
-def rcsfsplit(input, fileLabels, orbitalSets, encoding="utf-8", printInput=False):
+def rcsfsplit(inputFile, fileLabels, orbitalSets, encoding="utf-8", printInput=False):
     """
     Run rcsfsplit subprocess
-    :param input: name of the file to split
+    :param inputFile: name of the file to split
     :param fileLabels: labels which will be added to resulting files (output files -> input+fileLabel)
     :param orbitalSets: list of list of orbitals which will be used to split the input
     !WARNING! - fileLabels and orbitalSets should give the same length
@@ -89,7 +90,7 @@ def rcsfsplit(input, fileLabels, orbitalSets, encoding="utf-8", printInput=False
     # Check input consistency
     if len(orbitalSets) == len(fileLabels):
         # Combine input
-        inputC = input + '\n' + str(len(orbitalSets)) + '\n'
+        inputC = inputFile + '\n' + str(len(orbitalSets)) + '\n'
         for i, orbitalSet in enumerate(orbitalSets):
             inputC += ','.join(orbitalSet)
             inputC += '\n' + fileLabels[i] + '\n'
@@ -128,10 +129,10 @@ def rnucleus(charge, mass_number=0, mass=0, nuc_spin=1, nuc_dipol_moment=1, nuc_
     return 0
 
 
-def rangular(input="y\n", mpi_cores=1, encoding="utf-8"):
+def rangular(script_input="y\n", mpi_cores=1, encoding="utf-8"):
     """
     Run rangular - calculate angular part of the wave function, providing mpi_cores activates MPI
-    :param input: input to subprocess, default setting uses default GRASP values
+    :param script_input: input to subprocess, default setting uses default GRASP values
     :param mpi_cores: number of cores to use in calculations (default = 1, which avoids MPI)
     :param encoding: encoding for subprocess, default utf-8
     :return: 0
@@ -142,7 +143,7 @@ def rangular(input="y\n", mpi_cores=1, encoding="utf-8"):
         runName = ['mpirun', '-np', str(mpi_cores), 'rangular_mpi']
 
     subprocess.run(runName,
-                   input=input,
+                   input=script_input,
                    encoding=encoding)
 
     return 0
@@ -173,8 +174,8 @@ def rwfnestimate(init_guess=2, inputFile=None, encoding="utf-8"):
     return 0
 
 
-def rmcdhf(ASF_blocks, weights=None, output_log=None, orbitals='*', spectroscopic_orbitals='*',
-           itr_limit=100, encoding="utf-8", printInput=False):
+def rmcdhf(ASF_blocks, weights=None, orbitals='*', spectroscopic_orbitals='*',
+           itr_limit=100, output_log=None, encoding="utf-8", printInput=False):
 
     if not isinstance(ASF_blocks, list): ASF_blocks = [ASF_blocks]
     if weights is None:
@@ -218,6 +219,67 @@ def rsave(output_file):
     subprocess.run(['rsave', output_file])
     return 0
 
+
+def rci(inputFile, ASF_blocks, photon_frequency_scale_factor=0, H_transverse='y', H_vacuum_polarization='y',
+        H_normal_mass_shift='y', H_specific_mass_shift='y', selfenergy_limit=0,
+        output_log=None, mpi_cores=1, encoding="utf-8"):
+    """
+    Run rci or rci_mpi
+    :param inputFile: name of the file with state for calculation
+    :param ASF_blocks: ASF serial numbers for each block (number of blocks depend on input file)
+    :param photon_frequency_scale_factor: The scale factor to modify all transverse photon frequencies
+            (for example '1.d-6'), default 0 - turn off scaling
+    :param H_transverse: Include contribution of H (Transverse)? - y/n
+    :param H_vacuum_polarization: Include H (Vacuum Polarisation)? - y/n
+    :param H_normal_mass_shift: Include H (Normal Mass Shift)? - y/n
+    :param H_specific_mass_shift: Include H (Specific Mass Shift)? - y/n
+    :param selfenergy_limit: Largest n quantum number for including self-energy for orbital n
+            should be less or equal 8, default 0 - turn off self-energy estimation
+    :param output_log: name file for output log
+    :param mpi_cores: number of cores to use in calculations (default = 1, which avoids MPI)
+    :param encoding: encoding for subprocess, default utf-8
+    :return: 0
+    """
+    if not isinstance(ASF_blocks, list):
+        ASF_blocks = [ASF_blocks]
+
+    inputC = 'y\n' + inputFile + '\n' + H_transverse + '\n'
+
+    if photon_frequency_scale_factor != 0:
+        inputC += 'y\n' + str(photon_frequency_scale_factor) + '\n'
+    else:
+        inputC += 'n\n'
+
+    inputC += H_vacuum_polarization + '\n' + H_normal_mass_shift + '\n' + H_specific_mass_shift + '\n'
+
+    if selfenergy_limit > 0:
+        inputC += 'y\n' + str(selfenergy_limit) + '\n'
+    else:
+        inputC += 'n\n'
+
+    for i, ASF in enumerate(ASF_blocks):
+        if not isinstance(ASF, str):  # Safeguard to change input into string
+            if not isinstance(ASF, list): ASF = [ASF]
+            ASF = " ".join([str(ASF_int) for ASF_int in ASF])
+        inputC += str(ASF) + '\n'
+
+    if mpi_cores == 1:
+        runName = ['rci']
+    else:
+        runName = ['mpirun', '-np', str(mpi_cores), 'rci_mpi']
+
+    if output_log is not None:
+        with open(output_log, 'w') as output:
+            subprocess.run(runName,
+                           input=inputC,
+                           stdout=output,
+                           encoding=encoding)
+    else:
+        subprocess.run(runName,
+                       input=inputC,
+                       encoding=encoding)
+
+    return 0
 
 def clean_files():
     """
